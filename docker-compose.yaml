@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  deno-websocket-app:
+    build: ./websocket # Dockerfile'ın bulunduğu klasör
+    # container_name: deno-websocket
+    image: deno-websocket-image
+    deploy:
+      replicas: 3 # İstediğiniz container sayısını burada ayarlayın
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:3000" # WebSocket için kullanılacak port
+    environment:
+      - REDIS_HOST=my-redis
+  my-redis:
+    image: redis:7.4.0-alpine
+    deploy:
+      replicas: 1 # İstediğiniz container sayısını burada ayarlayın
+      restart_policy:
+        condition: on-failure
+    # ports:
+    #   - 6379:6379
+  frontend:
+    build: ./frontend
+    image: nginx-app-image
+    deploy:
+      replicas: 1 # İstediğiniz container sayısını burada ayarlayın
+      restart_policy:
+        condition: on-failure
+    environment:
+      - PORT=80
+      - VITE_WEBSOCKET_HOST="ws://localhost:8080"
+    ports:
+      - "1234:80"
+# networks:
+#   default:
+#     driver: overlay
+#     attachable: true
