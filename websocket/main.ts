@@ -12,18 +12,8 @@ redisSub.on("message", (channel: string, message: string) => {
   socketGroup.sendMessageToGroup(channel, message);
 });
 
-redisSub.subscribe("group-A", "group-B", (err, count) => {
-  if (err) {
-    // Just like other commands, subscribe() can fail for some reasons,
-    // ex network issues.
-    console.error("Failed to subscribe: %s", err.message);
-  } else {
-    // `count` represents the number of channels this client are currently subscribed to.
-    console.log(
-      `Subscribed successfully! This client is currently subscribed to ${count} channels.`
-    );
-  }
-});
+// redisSub.subscribe()
+// redisSub.subscribe(["group-A", "group-B"]);
 Deno.serve({ port: 4000 }, (req) => {
   if (req.headers.get("upgrade") !== "websocket") {
     return new Response(null, { status: 501 });
@@ -31,8 +21,8 @@ Deno.serve({ port: 4000 }, (req) => {
 
   const { socket, response } = Deno.upgradeWebSocket(req);
 
-  socket.addEventListener("open", () => {
-    console.log("A client just connected (v3)");
+  socket.addEventListener("open", (event) => {
+    // console.log("A client just connected (v3)");
     const serverId = Deno.env.get("HOSTNAME") || "NO ENV";
     socket.send(JSON.stringify({ type: "server", data: serverId }));
   });
@@ -41,22 +31,39 @@ Deno.serve({ port: 4000 }, (req) => {
     const payload = JSON.parse(event.data);
 
     if (payload.type === "join") {
-      socketGroup.join(socket, payload.name);
+      const groupName = payload.name;
+      if (socketGroup.isGroupEmpty(groupName)) {
+        console.log("redisSub.subscribe", groupName);
+        redisSub.subscribe(groupName);
+      }
+      socketGroup.join(socket, groupName);
     }
+    // TODO not tested
     if (payload.type === "leave") {
       socketGroup.leave(socket, payload.name);
+      const groupName = payload.name;
+      if (socketGroup.isGroupEmpty(groupName)) {
+        // console.log("redisSub.unsubscribe", groupName);
+        redisSub.unsubscribe(groupName);
+      }
     }
     if (payload.type === "message") {
-      console.log("payload.data", payload.data);
       redisPub.publish(payload.name, payload.data);
-      // socketGroup.sendMessageToGroup(payload.name, payload.data);
-      // socketGroup.leave(socket, payload.data);
     }
-    // console.log();
   });
   socket.addEventListener("close", () => {
-    console.log("A client just DisConnected");
+    // console.log("A client just DisConnected");
+    const groupNames = socketGroup.getAllGroups(socket);
     socketGroup.leaveAllGroups(socket);
+    // console.log("groupNames", groupNames);
+    for (const groupName of groupNames) {
+      const isGroupEmpty = socketGroup.isGroupEmpty(groupName);
+      // console.log("isGroupEmpty", groupName, isGroupEmpty);
+      if (isGroupEmpty) {
+        redisSub.unsubscribe(groupName);
+        console.log("redisSub.unsubscribe", groupName);
+      }
+    }
   });
   return response;
 });

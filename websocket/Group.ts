@@ -14,7 +14,7 @@ export class SocketGroup {
       group.add(socket);
     }
 
-    console.log(`Socket added to group: ${groupName}`);
+    // console.log(`Socket added to group: ${groupName}`);
   }
 
   // Bir socket'i belirli bir gruptan çıkarır
@@ -25,7 +25,7 @@ export class SocketGroup {
       return;
     }
     group.delete(socket);
-    console.log(`Socket removed from group: ${groupName}`);
+    // console.log(`Socket removed from group: ${groupName}`);
     // group.size;
   }
   // Belirli bir gruptaki tüm üyelere mesaj gönderir
@@ -48,13 +48,31 @@ export class SocketGroup {
       console.log(`Group ${groupName} cleared.`);
     }
   }
+
+  public getAllGroups(socket: WebSocket): string[] {
+    const groupNames: string[] = [];
+    this.groups.forEach((sockets, groupName) => {
+      if (sockets.has(socket)) {
+        groupNames.push(groupName);
+      }
+    });
+    return groupNames;
+  }
   // Bir socket'i tüm gruplardan çıkarır
   public leaveAllGroups(socket: WebSocket): void {
     this.groups.forEach((group, groupName) => {
       if (group.has(socket)) {
         group.delete(socket);
-        console.log(`Socket removed from all groups: ${groupName}`);
+        // console.log(`Socket removed from all groups: ${groupName}`);
       }
     });
+  }
+  public isGroupEmpty(groupName: string) {
+    const group = this.groups.get(groupName);
+    if (!group) {
+      return true;
+    }
+    // console.log("group size", groupName, group.size);
+    return group.size === 0;
   }
 }
