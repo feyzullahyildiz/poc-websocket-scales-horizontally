@@ -1,6 +1,7 @@
 import tinycolor from "tinycolor2";
 
-export function getContrastColor(baseColor: any) {
+type Color = string | { r: number; g: number; b: number };
+export function getContrastColor(baseColor: Color) {
   const value = tinycolor(baseColor);
   if (value.getLuminance() <= 0.5) {
     return "#fff";

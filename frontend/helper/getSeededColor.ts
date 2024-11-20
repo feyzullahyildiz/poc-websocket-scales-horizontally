@@ -1,5 +1,5 @@
 import seedrandom from "seedrandom";
-import { getContrastColor } from "./getContrastColor";
+import { getContrastColor } from "./getContrastColor.ts";
 
 // Rastgele bir hex rengi üretmek için fonksiyon
 export function getSeededColor(seed: string) {

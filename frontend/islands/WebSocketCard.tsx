@@ -1,7 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
-import { getSeededColor } from "../helper";
+import { useEffect, useRef, useState } from "preact/hooks";
 
-export const WebSocketCard = ({ id, groupName }) => {
+import { getSeededColor } from "../helper/index.ts";
+
+interface Props {
+  id: number;
+  groupName: string;
+  websocketUrl: string;
+}
+export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0); // Yeniden bağlanma sayacı
   const [lastMessage, setLastMessage] = useState("");
@@ -13,25 +19,26 @@ export const WebSocketCard = ({ id, groupName }) => {
   const reconnectInterval = 1000; // Başlangıç bekleme süresi (ms)
   const maxReconnectInterval = 30000; // Maksimum bekleme süresi (ms)
 
-  const close = () => {
+  const afterSocketClosed = () => {
     setStyleObj({
       backgroundColor: "#000",
       color: "#fff",
     });
   };
 
+  const closeSocket = () => {
+    const socket = socketRef.current;
+    if (!socket) {
+      return;
+    }
+    socket.close(3000, "MANUEL");
+  };
   const connectWebSocket = () => {
-    console.log("process.env", (process as any).env);
-    console.log("import.meta", import.meta);
-    const { env } = (import.meta as any) || {};
-    const url = env?.VITE_WEBSOCKET_HOST || "ws://localhost:3000";
-    // const url = "ws://localhost:8080";
-    console.log("WebSocket bağlanıyor...");
-    const socket = new WebSocket(url);
+    const socket = new WebSocket(websocketUrl);
     socketRef.current = socket;
 
     socket.addEventListener("open", () => {
-      console.log("WebSocket bağlantısı kuruldu.");
+      console.log("WebSocket connected.");
       reconnectAttempts.current = 0; // Başarılı bağlantıda sıfırla
       socket.send(JSON.stringify({ type: "join", name: groupName }));
     });
@@ -48,14 +55,18 @@ export const WebSocketCard = ({ id, groupName }) => {
       }
     });
 
-    socket.addEventListener("close", () => {
-      console.log("WebSocket bağlantısı kapandı.");
-      close();
+    socket.addEventListener("close", (event) => {
+      // console.log("event", event);
+      console.log("WebSocket closed.");
+      afterSocketClosed();
+      if (event.reason === "MANUEL") {
+        return;
+      }
       scheduleReconnect(); // Bağlantı koparsa yeniden bağlanmayı planla
     });
 
     socket.addEventListener("error", (error) => {
-      console.error("WebSocket hatası:", error);
+      console.error("WebSocket error:", error);
       socket.close(); // Hata durumunda bağlantıyı kapat
     });
   };
@@ -63,11 +74,11 @@ export const WebSocketCard = ({ id, groupName }) => {
   const scheduleReconnect = () => {
     const delay = Math.min(
       reconnectInterval * (reconnectAttempts.current + 1),
-      maxReconnectInterval,
+      maxReconnectInterval
     );
     reconnectAttempts.current++;
     console.log(
-      `Yeniden bağlanma denemesi ${reconnectAttempts.current}, bekleme süresi: ${delay} ms`,
+      `Tring to reconnect. Attempt: ${reconnectAttempts.current}, waiting for: ${delay} ms`
     );
     setTimeout(() => {
       if (
@@ -87,7 +98,7 @@ export const WebSocketCard = ({ id, groupName }) => {
         socketRef.current.close();
         socketRef.current = null;
       }
-      close();
+      afterSocketClosed();
     };
   }, [groupName]);
 
@@ -97,38 +108,36 @@ export const WebSocketCard = ({ id, groupName }) => {
       return;
     }
     if (socket.readyState !== socket.OPEN) {
-      console.log("SOCKET KAPALI");
+      console.log("socket closed");
       return;
     }
-    console.log("Mesaj gönderiliyor...");
     socket.send(
       JSON.stringify({
         type: "message",
         name: groupName,
-        data: `Client Index: ${id}`,
-      }),
+        data: `${groupName} ID: ${id}`,
+      })
     );
   };
 
   return (
-    <div
-      className="flex min-h-24 min-w-36 flex-col justify-center border-2 border-red-950"
-      style={styleObj}
-    >
-      <div className="flex flex-col gap-4 p-4">
-        <div className="text-center">WebSocket ({groupName})</div>
+    <div className="flex min-h-24 min-w-48 flex-col justify-center border-2 border-red-950">
+      <div className="flex flex-col gap-4" style={getSeededColor(groupName)}>
+        <div className="flex justify-between p-4" onClick={closeSocket}>
+          <span className="font-bold">{groupName}</span>
+          <span>ID: {id}</span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-1 p-4" style={styleObj}>
+        <div className="flex min-h-10 justify-center">{lastMessage}</div>
+
         <button
           onClick={sendMessage}
-          className="border-2 px-2"
-          style={{ borderColor: styleObj.color }}
+          className="w-full border-2 px-2 py-1 hover:bg-slate-400/50 active:bg-slate-400/80"
         >
-          Gönder
+          Sent Message
         </button>
-      </div>
-      <div className="flex-1"></div>
-      <div className="min-h-[40px] p-2" style={getSeededColor(groupName)}>
-        {lastMessage}
       </div>
     </div>
   );
-};
+}

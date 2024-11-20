@@ -24,14 +24,14 @@ redisSub.subscribe("group-A", "group-B", (err, count) => {
     );
   }
 });
-Deno.serve({ port: 3000 }, (req) => {
+Deno.serve({ port: 4000 }, (req) => {
   if (req.headers.get("upgrade") !== "websocket") {
     return new Response(null, { status: 501 });
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
 
-  socket.addEventListener("open", (event) => {
+  socket.addEventListener("open", () => {
     console.log("A client just connected (v3)");
     const serverId = Deno.env.get("HOSTNAME") || "NO ENV";
     socket.send(JSON.stringify({ type: "server", data: serverId }));
@@ -54,7 +54,7 @@ Deno.serve({ port: 3000 }, (req) => {
     }
     // console.log();
   });
-  socket.addEventListener("close", (event) => {
+  socket.addEventListener("close", () => {
     console.log("A client just DisConnected");
     socketGroup.leaveAllGroups(socket);
   });

@@ -1,6 +1,6 @@
 FROM denoland/deno:2.0.6
 
-EXPOSE 3000
+EXPOSE 4000
 WORKDIR /app
 
 # Prefer not to run as root.
