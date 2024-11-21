@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState, useMemo } from "preact/hooks";
 
 import { getSeededColor } from "../helper/index.ts";
 
@@ -11,6 +11,7 @@ export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0); // Yeniden bağlanma sayacı
   const [lastMessage, setLastMessage] = useState("");
+  const [serverName, setServerName] = useState("");
   const [styleObj, setStyleObj] = useState({
     backgroundColor: "#000",
     color: "#fff",
@@ -20,6 +21,7 @@ export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
   const maxReconnectInterval = 30000; // Maksimum bekleme süresi (ms)
 
   const afterSocketClosed = () => {
+    setServerName("");
     setStyleObj({
       backgroundColor: "#000",
       color: "#fff",
@@ -47,6 +49,7 @@ export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
       const payload = JSON.parse(event.data);
       if (payload.type === "server") {
         const newObject = getSeededColor(payload.data);
+        setServerName(payload.data);
         setStyleObj(newObject);
         return;
       }
@@ -120,6 +123,13 @@ export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
     );
   };
 
+  const reversedStyle = useMemo(
+    () => ({
+      color: styleObj.backgroundColor,
+      backgroundColor: styleObj.color,
+    }),
+    [styleObj]
+  );
   return (
     <div className="flex min-h-24 min-w-48 flex-col justify-center border-2 border-red-950">
       <div className="flex flex-col gap-4" style={getSeededColor(groupName)}>
@@ -134,9 +144,23 @@ export default function WebSocketCard({ id, websocketUrl, groupName }: Props) {
         <button
           onClick={sendMessage}
           className="w-full border-2 px-2 py-1 hover:bg-slate-400/50 active:bg-slate-400/80"
+          style={{ borderColor: styleObj.color }}
         >
           Sent Message
         </button>
+        <div className="flex gap-2 text-sm    justify-between">
+          <span className="opacity-90 px-1" style={reversedStyle}>
+            Server
+          </span>
+          {serverName && (
+            <span
+              className="italic underline underline-offset-2 px-1 opacity-90"
+              style={reversedStyle}
+            >
+              {serverName}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

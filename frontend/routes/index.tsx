@@ -1,11 +1,11 @@
 import WebSocketCard from "../islands/WebSocketCard.tsx";
 
-const arr = new Array(8).fill(0).map((_, i) => i + 1);
+const arr = new Array(6).fill(0).map((_, i) => i + 1);
 export default function Home() {
   const wsUrl = Deno.env.get("WEBSOCKET_URL") || "ws://localhost:3000";
   console.log("wsUrl", wsUrl);
   return (
-    <div class="h-full min-h-screen bg-stone-950 text-yellow-100">
+    <div class="h-full min-h-screen bg-stone-800 text-yellow-100">
       <div class="m-auto p-4">
         <div class="flex flex-wrap justify-center gap-4">
           {arr.map((id) => (
@@ -21,7 +21,7 @@ export default function Home() {
               id={id}
               key={id}
               websocketUrl={wsUrl}
-              groupName="B"
+              groupName="GROUP_B"
             />
           ))}
           {arr.map((id) => (
@@ -29,7 +29,7 @@ export default function Home() {
               id={id}
               key={id}
               websocketUrl={wsUrl}
-              groupName="C"
+              groupName="GROUP_C"
             />
           ))}
           {arr.map((id) => (
@@ -37,15 +37,7 @@ export default function Home() {
               id={id}
               key={id}
               websocketUrl={wsUrl}
-              groupName="D"
-            />
-          ))}
-          {arr.map((id) => (
-            <WebSocketCard
-              id={id}
-              key={id}
-              websocketUrl={wsUrl}
-              groupName="E"
+              groupName="Another Group"
             />
           ))}
         </div>
