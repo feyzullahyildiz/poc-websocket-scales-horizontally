@@ -4,6 +4,7 @@
 - Backend has only 2 files.
     - [websocket/main.ts](./websocket/main.ts)
     - [websocket/Group.ts](./websocket/Group.ts)
+# [Demo Video](https://www.linkedin.com/posts/ahmet-feyzullah-yildiz_websocket-deno-fresh-activity-7265608694447419392-3pUU?utm_source=share&utm_medium=member_desktop)
 # Techs
 - The backend is a native [Deno](https://deno.land/) app without a library. It just needs a [Redis client library](https://www.npmjs.com/package/ioredis).
     - The main file is [websocket/main.ts](./websocket/main.ts)
